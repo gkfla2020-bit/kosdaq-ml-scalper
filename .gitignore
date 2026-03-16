@@ -1,0 +1,6 @@
+.env
+*.log
+trade_log.json
+ml_backtest_results.json
+__pycache__/
+*.pyc
