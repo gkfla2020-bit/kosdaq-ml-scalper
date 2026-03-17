@@ -493,6 +493,22 @@ def daily_report(result):
                f"승률: {wins/len(logs)*100:.0f}%\n누적 손익: {total_pnl:+,}원")
         log.info(msg); tg(msg)
 
+def clear_holdings():
+    """기존 보유 종목 전량 시장가 청산"""
+    check_token()
+    holdings, cash = balance()
+    if not holdings:
+        log.info("🧹 기존 보유 종목 없음")
+        return
+    log.info(f"🧹 기존 보유 {len(holdings)}종목 청산 시작")
+    tg(f"🧹 기존 보유 {len(holdings)}종목 청산")
+    for h in holdings:
+        code, name, qty = h["code"], h["name"], h["qty"]
+        log.info(f"  청산: {name}({code}) {qty}주 (수익률: {h['pnl']:+.1f}%)")
+        order(code, "SELL", qty, px=0)
+        time.sleep(0.3)
+    tg("✅ 기존 보유 종목 전량 청산 완료")
+
 def is_trading_day():
     return datetime.now().weekday() < 5
 
@@ -533,6 +549,11 @@ def main():
             if LAST_TRAIN is None or (datetime.now() - LAST_TRAIN).days >= RETRAIN_DAYS:
                 if not train_models():
                     log.error("ML 학습 실패 → 오늘 스킵"); time.sleep(3600); continue
+
+            # 09:00 기존 보유 종목 청산
+            wait_until("0900")
+            check_token()
+            clear_holdings()
 
             wait_until("0905")
             check_token()
